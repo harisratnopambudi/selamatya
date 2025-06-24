@@ -134,9 +134,10 @@
   </style>
 </head>
 <body>
-  <audio id="bgm" src="song.mp3" loop></audio>
+  <audio id="bgm" src="song.mp3" autoplay loop hidden></audio>
   <button id="play-audio" style="position:fixed;top:0;left:0;right:0;bottom:0;margin:auto;z-index:9999;padding:18px 32px;font-size:1.2rem;border-radius:16px;border:none;background:#a6c1ee;color:#fff;box-shadow:0 2px 12px #a6c1ee88;cursor:pointer;">Klik di sini untuk mulai musik</button>
   <svg id="particles"></svg>
+  <svg id="birds-bg"></svg>
   <div class="container">
     <svg class="svg-decor heart" viewBox="0 0 32 32"><path d="M16 29s-9.5-7.6-12.2-12.1C1.1 14.2 1 10.7 3.7 8.3c2.7-2.4 6.2-1.6 8.1 0.7C13.7 6.7 17.2 5.9 19.9 8.3c2.7 2.4 2.6 5.9-.1 8.6C25.5 21.4 16 29 16 29z" fill="#fbc2eb"/></svg>
     <svg class="svg-decor star" viewBox="0 0 32 32"><polygon points="16,3 20,13 31,13 22,19 25,29 16,23 7,29 10,19 1,13 12,13" fill="#ffe066"/></svg>
@@ -196,6 +197,71 @@
     ];
     let idx = 0;
     const ucapanDiv = document.getElementById('ucapan');
+    // Fungsi efek love bermunculan
+    function spawnLove() {
+      const loveSVG = '<svg width="38" height="34" viewBox="0 0 38 34" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M19 32s-9.5-7.6-12.2-12.1C3.1 14.2 3 10.7 5.7 8.3c2.7-2.4 6.2-1.6 8.1 0.7C16.7 6.7 20.2 5.9 22.9 8.3c2.7 2.4 2.6 5.9-.1 8.6C28.5 21.4 19 32 19 32z" fill="#fbc2eb"/></svg>';
+      const love = document.createElement('div');
+      love.innerHTML = loveSVG;
+      love.style.position = 'fixed';
+      love.style.left = '50%';
+      love.style.top = '55%';
+      love.style.transform = `translate(-50%, -50%) scale(${0.7 + Math.random()*0.7})`;
+      love.style.pointerEvents = 'none';
+      love.style.zIndex = 20;
+      love.style.opacity = 0.85;
+      document.body.appendChild(love);
+      // Animasi
+      const angle = (Math.PI*2) * (Math.random()) + (Math.random()-0.5)*0.5;
+      const dist = 60 + Math.random()*120;
+      const up = 80 + Math.random()*80;
+      setTimeout(()=>{
+        love.style.transition = 'all 1.8s cubic-bezier(.68,-0.55,.27,1.55)';
+        love.style.opacity = 0;
+        love.style.left = `calc(50% + ${Math.cos(angle)*dist}px)`;
+        love.style.top = `calc(55% - ${up + Math.sin(angle)*dist}px)`;
+      }, 30+Math.random()*200);
+      setTimeout(()=>{love.remove();}, 2200);
+    }
+    let loveInterval = null;
+    function startLoveRain() {
+      if (loveInterval) return;
+      loveInterval = setInterval(() => {
+        for(let i=0;i<4;i++) setTimeout(spawnLove, i*120);
+      }, 320);
+    }
+    // Efek love jatuh dari atas
+    let loveFallInterval = null;
+    function spawnFallingLove() {
+      const loveSVG = '<svg width="28" height="24" viewBox="0 0 38 34" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M19 32s-9.5-7.6-12.2-12.1C3.1 14.2 3 10.7 5.7 8.3c2.7-2.4 6.2-1.6 8.1 0.7C16.7 6.7 20.2 5.9 22.9 8.3c2.7 2.4 2.6 5.9-.1 8.6C28.5 21.4 19 32 19 32z" fill="#fbc2eb"/></svg>';
+      const love = document.createElement('div');
+      love.innerHTML = loveSVG;
+      love.style.position = 'fixed';
+      love.style.left = Math.random() * 96 + 2 + 'vw';
+      love.style.top = '-40px';
+      love.style.transform = `scale(${0.5 + Math.random()*0.7})`;
+      love.style.pointerEvents = 'none';
+      love.style.zIndex = 10;
+      love.style.opacity = 0.7 + Math.random()*0.3;
+      document.body.appendChild(love);
+      // Animasi jatuh
+      const duration = 2500 + Math.random()*2000;
+      setTimeout(()=>{
+        love.style.transition = `top ${duration}ms linear, opacity 1.2s`;
+        love.style.top = '110vh';
+        love.style.opacity = 0;
+      }, 30);
+      setTimeout(()=>{love.remove();}, duration+1200);
+    }
+    function startLoveFall() {
+      if (loveFallInterval) return;
+      loveFallInterval = setInterval(() => {
+        for(let i=0;i<2;i++) setTimeout(spawnFallingLove, i*180);
+      }, 350);
+    }
+    function stopLoveFall() {
+      clearInterval(loveFallInterval);
+      loveFallInterval = null;
+    }
     function tampilkanUcapanBergantian() {
       ucapanDiv.classList.remove('show');
       setTimeout(() => {
@@ -204,6 +270,10 @@
         idx++;
         if (idx < ucapanList.length) {
           setTimeout(tampilkanUcapanBergantian, 4000);
+          if(idx === 1) startLoveFall(); // mulai love jatuh saat teks mulai
+        } else {
+          stopLoveFall();
+          setTimeout(startLoveRain, 1000);
         }
       }, 400);
     }
@@ -220,6 +290,53 @@
       audio.play();
       btn.style.display = 'none';
     });
+
+    // --- Efek burung kecil berterbangan ---
+    const birdSVG = '<path d="M8 12 Q10 8 16 8 Q22 8 24 12 Q20 10 16 12 Q12 10 8 12 Z" fill="#a6c1ee" fill-opacity="0.55"/>';
+    function createBird() {
+      const svgNS = "http://www.w3.org/2000/svg";
+      const bird = document.createElementNS(svgNS, "svg");
+      // Ukuran random
+      const scale = 0.7 + Math.random() * 0.7;
+      const w = 32 * scale, h = 20 * scale;
+      bird.setAttribute("width", w);
+      bird.setAttribute("height", h);
+      bird.setAttribute("viewBox", "0 0 32 20");
+      bird.style.position = "absolute";
+      // Posisi Y random, dengan sedikit variasi arah naik/turun
+      const yStart = Math.random() * (window.innerHeight * 0.7) + 10;
+      const yEnd = yStart + (Math.random() - 0.5) * 80;
+      bird.style.top = yStart + "px";
+      bird.style.opacity = 0.6 + Math.random() * 0.3;
+      bird.innerHTML = birdSVG;
+      // Arah terbang: kiri ke kanan atau kanan ke kiri
+      const leftToRight = Math.random() > 0.5;
+      const startX = leftToRight ? -60 : window.innerWidth + 60;
+      const endX = leftToRight ? window.innerWidth + 60 : -60;
+      bird.style.left = startX + "px";
+      bird.style.transform = leftToRight ? `scale(${scale},${scale})` : `scale(-${scale},${scale})`;
+      document.getElementById("birds-bg").appendChild(bird);
+      // Animasi
+      const duration = 8000 + Math.random() * 9000;
+      setTimeout(() => {
+        bird.style.transition = `left ${duration}ms linear, top ${duration}ms linear`;
+        bird.style.left = endX + "px";
+        bird.style.top = yEnd + "px";
+      }, 50);
+      setTimeout(() => { bird.remove(); }, duration + 2000);
+    }
+    // Atur SVG background birds agar full screen
+    const birdsBg = document.getElementById('birds-bg');
+    birdsBg.style.position = 'fixed';
+    birdsBg.style.left = 0;
+    birdsBg.style.top = 0;
+    birdsBg.style.width = '100vw';
+    birdsBg.style.height = '100vh';
+    birdsBg.style.pointerEvents = 'none';
+    birdsBg.style.zIndex = 0;
+    // Jalankan burung secara periodik
+    setInterval(() => { if (document.hasFocus()) createBird(); }, 2200);
+    for(let i=0;i<3;i++) setTimeout(createBird, i*1200);
   </script>
 </body>
 </html> 
